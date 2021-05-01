@@ -1,6 +1,28 @@
-#include <bits/stdc++.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <string.h>
+#include <sys/wait.h>
+#include <dirent.h>
+#include <sys/msg.h>
+#include <sys/ipc.h>
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <string>
+#include <sstream>
 
 using namespace std;
+
+
+typedef struct message_buffer {
+    long msg_type;
+    char msg_text[1024];
+} message_buffer;
 
 
 class Console {
@@ -16,9 +38,46 @@ public:
 
     void process_cmd() {
         if (cmd[0] == "MySwitch")
-            cout << "MySwitch" << endl;
+            create_switch(atoi(cmd[1].c_str()), atoi(cmd[2].c_str()));
         if (cmd[0] == "MySystem")
-            cout << "MySystem" << endl;
+            create_system(atoi(cmd[1].c_str()));
+        if (cmd[0] == "Connect")
+            connect_system_switch(atoi(cmd[1].c_str()), atoi(cmd[2].c_str()), atoi(cmd[3].c_str()));
+    }
+
+    void connect_system_switch(int system_number, int switch_number, int port_number) {
+        message_buffer msg_buff;
+        
+        int key = system_number + 1000;
+        int msgid = msgget(key, 0666 | IPC_CREAT);
+        msg_buff.msg_type = 1;
+        strcpy(msg_buff.msg_text, "hi system");
+        msgsnd(msgid, &msg_buff, sizeof(msg_buff), 0);
+
+        key = switch_number;
+        msgid = msgget(key, 0666 | IPC_CREAT);
+        msg_buff.msg_type = 1;
+        strcpy(msg_buff.msg_text, "hi switch");
+        msgsnd(msgid, &msg_buff, sizeof(msg_buff), 0);
+    }
+
+    void create_switch(int number_of_ports, int switch_number) {
+        if (fork() == 0) {
+            char num_of_ports[16], switch_no[16];
+            sprintf(num_of_ports, "%d", number_of_ports);
+            sprintf(switch_no, "%d", switch_number);
+            char *args[]={num_of_ports, switch_no, NULL};
+            execvp("./switch.out", args);
+        }
+    }
+
+    void create_system(int system_number) {
+        if (fork() == 0) {
+            char sys_no[16];
+            sprintf(sys_no, "%d", system_number);
+            char *args[]={sys_no, NULL};
+            execvp("./system.out", args);
+        }
     }
 
     vector<string> convert_string_to_vector(string str) {
@@ -34,7 +93,8 @@ private:
 };
 
 
-int main(int argc, char const *argv[]) {
+int main(int argc, char *argv[]) {
+    system("ipcrm --all=msg");
     Console console;
     console.run();
     return 0;
