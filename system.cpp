@@ -38,6 +38,7 @@ vector<string> split_frame(string str) {
 
 
 int main(int argc, char const *argv[]) {
+    int switch_number = -1;
     int system_number = atoi(argv[0]);
     message_buffer msg_buff;
     int key = system_number + 1000;
@@ -46,8 +47,10 @@ int main(int argc, char const *argv[]) {
         if (msgrcv(msgid, &msg_buff, sizeof(msg_buff), 1, IPC_NOWAIT) != -1) {
             string frame(msg_buff.msg_text);
             vector<string> data = split_frame(frame);
-            if (data[0] == "0") {
-
+            int sender = atoi(data[0].c_str());
+            int receiver = atoi(data[1].c_str());
+            if (sender == 0) {
+                switch_number = atoi(data[2].c_str());
             }
         }
     }
