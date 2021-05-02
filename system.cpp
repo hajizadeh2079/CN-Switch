@@ -25,6 +25,18 @@ typedef struct message_buffer {
 } message_buffer;
 
 
+vector<string> split_frame(string str) {
+    vector<string> v;
+    stringstream ss(str);
+    while (ss.good()) {
+        string substr;
+        getline(ss, substr, ':');
+        v.push_back(substr);
+    }
+    return v;
+}
+
+
 int main(int argc, char const *argv[]) {
     int system_number = atoi(argv[0]);
     message_buffer msg_buff;
@@ -32,8 +44,11 @@ int main(int argc, char const *argv[]) {
     int msgid = msgget(key, 0666 | IPC_CREAT);
     while (true) {
         if (msgrcv(msgid, &msg_buff, sizeof(msg_buff), 1, IPC_NOWAIT) != -1) {
-            cout << system_number << endl;
-            cout << msg_buff.msg_text << endl;
+            string frame(msg_buff.msg_text);
+            vector<string> data = split_frame(frame);
+            if (data[0] == "0") {
+
+            }
         }
     }
     exit(0);
