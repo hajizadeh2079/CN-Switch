@@ -49,8 +49,17 @@ int main(int argc, char const *argv[]) {
             vector<string> data = split_frame(frame);
             int sender = atoi(data[0].c_str());
             int receiver = atoi(data[1].c_str());
-            if (sender == 0) {
+            if (sender == 0)
                 switch_number = atoi(data[2].c_str());
+            else {
+                if (sender == system_number) {
+                    int key2 = switch_number;
+                    int msgid2 = msgget(key2, 0666 | IPC_CREAT);
+                    msgsnd(msgid2, &msg_buff, sizeof(msg_buff), 0);
+                    cout << system_number << " sends " << data[2] << " to " << receiver << endl;
+                }
+                if (receiver == system_number)
+                    cout << system_number << " receives " << data[2] << " from " << sender << endl;
             }
         }
     }

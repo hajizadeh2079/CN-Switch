@@ -45,6 +45,8 @@ void process_frame(vector<string> data, int *port_table, int *is_switch) {
         if (data.size() == 5)
             is_switch[atoi(data[3].c_str())] = 1;
     }
+    else {
+    }
 }
 
 
