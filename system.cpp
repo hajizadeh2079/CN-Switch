@@ -57,6 +57,23 @@ void send_message(vector<string> &data, int key) {
 }
 
 
+void receive_message(int system_number, vector<string> &data, message_buffer &msg_buff, int msgid) {
+    vector<string> all_data;
+    int sender = atoi(data[0].c_str());
+    all_data.push_back(data[2]);
+    while (!atoi(data[3].c_str())) {
+        msgrcv(msgid, &msg_buff, sizeof(msg_buff), 1, 0);
+        string frame(msg_buff.msg_text);
+        data = split_frame(frame);
+        all_data.push_back(data[2]);
+    }
+    string msg = "";
+    for (int i = 0; i < all_data.size(); i++)
+        msg += all_data[i];
+    cout << system_number << " receives " << msg << " from " << sender << endl;
+}
+
+
 int main(int argc, char const *argv[]) {
     int switch_number = -1;
     int system_number = atoi(argv[0]);
@@ -74,20 +91,8 @@ int main(int argc, char const *argv[]) {
             else {
                 if (sender == system_number)
                     send_message(data, switch_number);
-                if (receiver == system_number) {
-                    vector<string> all_data;
-                    all_data.push_back(data[2]);
-                    while (!atoi(data[3].c_str())) {
-                        msgrcv(msgid, &msg_buff, sizeof(msg_buff), 1, 0);
-                        string frame(msg_buff.msg_text);
-                        data = split_frame(frame);
-                        all_data.push_back(data[2]);
-                    }
-                    string msg = "";
-                    for (int i = 0; i < all_data.size(); i++)
-                        msg += all_data[i];
-                    cout << system_number << " receives " << msg << " from " << sender << endl;
-                }
+                if (receiver == system_number)
+                    receive_message(system_number, data, msg_buff, msgid);
             }
         }
     }
