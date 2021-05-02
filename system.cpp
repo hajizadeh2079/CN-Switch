@@ -16,6 +16,8 @@
 #include <string>
 #include <sstream>
 
+#define SIZE_LIMIT 16
+
 using namespace std;
 
 
@@ -37,6 +39,24 @@ vector<string> split_frame(string str) {
 }
 
 
+void send_message(vector<string> &data, int key) {
+    message_buffer msg_buff;
+    int msgid = msgget(key, 0666 | IPC_CREAT);
+    while (data[2].size() > SIZE_LIMIT) {
+        string split_data = data[2].substr(0, SIZE_LIMIT);
+        string msg = data[0] + ':' + data[1] + ':' + split_data + ":0";
+        data[2].erase(0, SIZE_LIMIT);
+        msg_buff.msg_type = 1;
+        strcpy(msg_buff.msg_text, msg.c_str());
+        msgsnd(msgid, &msg_buff, sizeof(msg_buff), 0);
+    }
+    string msg = data[0] + ':' + data[1] + ':' + data[2] + ":1";
+    msg_buff.msg_type = 1;
+    strcpy(msg_buff.msg_text, msg.c_str());
+    msgsnd(msgid, &msg_buff, sizeof(msg_buff), 0);
+}
+
+
 int main(int argc, char const *argv[]) {
     int switch_number = -1;
     int system_number = atoi(argv[0]);
@@ -52,14 +72,22 @@ int main(int argc, char const *argv[]) {
             if (sender == 0)
                 switch_number = atoi(data[2].c_str());
             else {
-                if (sender == system_number) {
-                    int key2 = switch_number;
-                    int msgid2 = msgget(key2, 0666 | IPC_CREAT);
-                    msgsnd(msgid2, &msg_buff, sizeof(msg_buff), 0);
-                    cout << system_number << " sends " << data[2] << " to " << receiver << endl;
+                if (sender == system_number)
+                    send_message(data, switch_number);
+                if (receiver == system_number) {
+                    vector<string> all_data;
+                    all_data.push_back(data[2]);
+                    while (!atoi(data[3].c_str())) {
+                        msgrcv(msgid, &msg_buff, sizeof(msg_buff), 1, 0);
+                        string frame(msg_buff.msg_text);
+                        data = split_frame(frame);
+                        all_data.push_back(data[2]);
+                    }
+                    string msg = "";
+                    for (int i = 0; i < all_data.size(); i++)
+                        msg += all_data[i];
+                    cout << system_number << " receives " << msg << " from " << sender << endl;
                 }
-                if (receiver == system_number)
-                    cout << system_number << " receives " << data[2] << " from " << sender << endl;
             }
         }
     }

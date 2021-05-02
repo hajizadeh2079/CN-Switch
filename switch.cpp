@@ -61,17 +61,17 @@ void process_frame(vector<string> data, int *port_table, int *is_switch, int num
         for (int i = 0; i < number_of_ports; i++) {
             if (port_table[i] == receiver && is_switch[i] == 0) {
                 find = true;
-                msg = data[0] + ':' + data[1] + ':' + data[2];
+                msg = data[0] + ':' + data[1] + ':' + data[2] + ':' + data[3];
                 key = receiver + 1000;
                 send_message(msg, key);
                 break;
             }
         }
         if (!find) {
-            msg = data[0] + ':' + data[1] + ':' + data[2] + ':' + to_string(switch_number);
+            msg = data[0] + ':' + data[1] + ':' + data[2] + ':' + data[3] + ':' + to_string(switch_number);
             for (int i = 0; i < number_of_ports; i++) {
                 if (is_switch[i] == 1) {
-                    if (data.size() > 3 && port_table[i] == atoi(data[3].c_str()))
+                    if (data.size() > 4 && port_table[i] == atoi(data[4].c_str()))
                         continue;
                     key = port_table[i];
                     send_message(msg, key);
