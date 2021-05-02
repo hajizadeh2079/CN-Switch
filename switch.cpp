@@ -37,10 +37,20 @@ vector<string> split_frame(string str) {
 }
 
 
+void send_message(string msg, int key) {
+    int msgid = msgget(key, 0666 | IPC_CREAT);
+    message_buffer msg_buff;
+    msg_buff.msg_type = 1;
+    strcpy(msg_buff.msg_text, msg.c_str());
+    msgsnd(msgid, &msg_buff, sizeof(msg_buff), 0);
+}
+
+
 void process_frame(vector<string> data, int *port_table, int *is_switch, int number_of_ports, int switch_number) {
     int sender = atoi(data[0].c_str());
     int receiver = atoi(data[1].c_str());
-    int key, msgid;
+    int key;
+    string msg;
     if (sender == 0) {
         port_table[atoi(data[3].c_str())] = atoi(data[2].c_str());
         if (data.size() == 5)
@@ -51,25 +61,20 @@ void process_frame(vector<string> data, int *port_table, int *is_switch, int num
         for (int i = 0; i < number_of_ports; i++) {
             if (port_table[i] == receiver && is_switch[i] == 0) {
                 find = true;
-                //
-                string msg = data[0] + ':' + data[1] + ':' + data[2];
+                msg = data[0] + ':' + data[1] + ':' + data[2];
                 key = receiver + 1000;
-                msgid = msgget(key, 0666 | IPC_CREAT);
-                message_buffer msg_buff;
-                msg_buff.msg_type = 1;
-                strcpy(msg_buff.msg_text, msg.c_str());
-                msgsnd(msgid, &msg_buff, sizeof(msg_buff), 0);
-                //
+                send_message(msg, key);
                 break;
             }
         }
         if (!find) {
-            string msg = data[0] + ':' + data[1] + ':' + data[2] + ':' + to_string(switch_number);
+            msg = data[0] + ':' + data[1] + ':' + data[2] + ':' + to_string(switch_number);
             for (int i = 0; i < number_of_ports; i++) {
                 if (is_switch[i] == 1) {
                     if (data.size() > 3 && port_table[i] == atoi(data[3].c_str()))
                         continue;
-                    // send message to switch
+                    key = port_table[i];
+                    send_message(msg, key);
                 }
             }
         }
